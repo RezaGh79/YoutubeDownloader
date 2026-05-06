@@ -1,12 +1,7 @@
-name: Download YouTube
+name: Download YouTube (Lowest Quality)
 
 on:
   workflow_dispatch:
-    inputs:
-      video_url:
-        description: "YouTube video URL"
-        required: true
-        type: string
 
 jobs:
   download:
@@ -18,10 +13,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y yt-dlp
 
-      - name: Download video
+      - name: Download video (lowest resolution)
         run: |
           mkdir output
-          yt-dlp "${{ github.event.inputs.video_url }}" -o "output/%(title)s.%(ext)s"
+          yt-dlp -f "worst" \
+          ""https://www.youtube.com/watch?v=dQw4w9WgXcQ"" \
+          -o "output/%(title)s.%(ext)s"
 
       - name: Upload as artifact
         uses: actions/upload-artifact@v4
