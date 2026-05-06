@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write # Needed to create and upload to a GitHub Release
 
 jobs:
   download:
@@ -16,6 +16,7 @@ jobs:
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
           -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
+          echo "yt-dlp version:"
           yt-dlp --version
 
       - name: Download video (lowest resolution)
@@ -23,7 +24,7 @@ jobs:
           mkdir -p output
           yt-dlp -f "worst" \
             -o "output/%(title)s.%(ext)s" \
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            "https://youtu.be/ELJCJeTyI1A?si=K8u9oLgheTMvpOD9" # <-- Updated URL
 
       - name: Create Release and upload file
         uses: softprops/action-gh-release@v2
@@ -35,4 +36,6 @@ jobs:
           files: |
             output/*
         env:
+          # GITHUB_TOKEN is automatically provided by GitHub Actions
+          # No need to hardcode or fetch a personal token
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
