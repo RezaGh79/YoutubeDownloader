@@ -1,0 +1,30 @@
+name: Download YouTube
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: "YouTube video URL"
+        required: true
+        type: string
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install yt-dlp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yt-dlp
+
+      - name: Download video
+        run: |
+          mkdir output
+          yt-dlp "${{ github.event.inputs.video_url }}" -o "output/%(title)s.%(ext)s"
+
+      - name: Upload as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-video
+          path: output
