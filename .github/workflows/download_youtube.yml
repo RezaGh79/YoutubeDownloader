@@ -1,40 +1,30 @@
-name: Setup yt-dlp for GitHub Actions
+name: Download YouTube (Lowest Quality)
 
-on: [push]
+on:
+  workflow_dispatch:
 
 jobs:
-  download-video:
+  download:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Install yt-dlp (Latest Version)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          # Install yt-dlp from PyPI to ensure we have the latest fixes for YouTube's API
+          pip install --upgrade yt-dlp
 
-      - name: Setup yt-dlp
-        uses: AnimMouse/setup-yt-dlp@v3
-        with:
-          version: "2024.02.04"  # Example stable version
-          ffmpeg: true
-          aria2: true
-          ejs-node: true
-          token: ${{ secrets.GH_PAT }}  # Required for cookie updates
-
-      - name: Setup yt-dlp YouTube cookies
-        uses: AnimMouse/setup-yt-dlp/cookies@v3
-        with:
-          cookies: ${{ secrets.YOUTUBE_COOKIES }}
-
-      - name: Download video
+      - name: Download video (lowest resolution)
         run: |
           mkdir -p output
-          yt-dlp --cache-dir ~/.yt-dlp-cache \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36" \
-            --cookies ~/.cache/yt-dlp/youtube/cookies.txt \
-            -f "bestvideo+bestaudio/best" \
-            "https://www.youtube.com/watch?v=DTi8wZ1a1TA" \
-            -o "output/%(title)s.%(ext)s"
+          # Using the latest yt-dlp installed above. 
+          # If you still get errors, you can add --user-agent flag as shown in the previous answer.
+          yt-dlp -f "worst" \
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ" \
+          -o "output/%(title)s.%(ext)s"
 
-      - name: Update cookies (if needed)
-        uses: AnimMouse/setup-yt-dlp/cookies/update@v3
+      - name: Upload as artifact
+        uses: actions/upload-artifact@v4
         with:
-          cookies_secret_name: YOUTUBE_COOKIES
-          token: ${{ secrets.GH_PAT }}
+          name: youtube-video
+          path: output
