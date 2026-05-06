@@ -1,0 +1,40 @@
+name: Setup yt-dlp for GitHub Actions
+
+on: [push]
+
+jobs:
+  download-video:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup yt-dlp
+        uses: AnimMouse/setup-yt-dlp@v3
+        with:
+          version: "2024.02.04"  # Example stable version
+          ffmpeg: true
+          aria2: true
+          ejs-node: true
+          token: ${{ secrets.GH_PAT }}  # Required for cookie updates
+
+      - name: Setup yt-dlp YouTube cookies
+        uses: AnimMouse/setup-yt-dlp/cookies@v3
+        with:
+          cookies: ${{ secrets.YOUTUBE_COOKIES }}
+
+      - name: Download video
+        run: |
+          mkdir -p output
+          yt-dlp --cache-dir ~/.yt-dlp-cache \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36" \
+            --cookies ~/.cache/yt-dlp/youtube/cookies.txt \
+            -f "bestvideo+bestaudio/best" \
+            "https://www.youtube.com/watch?v=DTi8wZ1a1TA" \
+            -o "output/%(title)s.%(ext)s"
+
+      - name: Update cookies (if needed)
+        uses: AnimMouse/setup-yt-dlp/cookies/update@v3
+        with:
+          cookies_secret_name: YOUTUBE_COOKIES
+          token: ${{ secrets.GH_PAT }}
