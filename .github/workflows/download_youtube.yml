@@ -8,18 +8,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install yt-dlp (Latest Version)
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
-          pip install --upgrade yt-dlp
+          pip install pytube beautifulsoup4
 
-      - name: Download video (lowest resolution)
+      - name: Run script
+        env:
+          URL: "https://youtu.be/ELJCJeTyI1A?si=K8u9oLgheTMvpOD9"
         run: |
           mkdir -p output
-          yt-dlp -f "worst" \
-            "https://youtu.be/ELJCJeTyI1A?si=K8u9oLgheTMvpOD9" \
-            -o "output/%(title)s.%(ext)s"
+          python3 your_script.py "$URL" --output-path output
 
       - name: Upload as artifact
         uses: actions/upload-artifact@v4
@@ -27,33 +27,28 @@ jobs:
           name: youtube-video
           path: output
 
-      - name: Commit and push downloaded mp4 back to repo
+      - name: Commit and push
         run: |
           set -e
           ls -lah output || true
 
-          # configure git
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-          # create branch-safe commit
           git fetch --all
           git checkout -B main
 
-          # copy mp4(s) into repo (optional: keep them under a folder)
           mkdir -p saved-videos
           cp -v output/*.mp4 saved-videos/ 2>/dev/null || true
 
-          # if nothing downloaded, stop
           if [ -z "$(ls -1 saved-videos/*.mp4 2>/dev/null)" ]; then
-            echo "No mp4 found to commit. Exiting."
+            echo "No files found. Exiting."
             exit 0
           fi
 
           git add -A
           git commit -m "Add YouTube download ($(date -u +'%Y-%m-%dT%H-%M-%SZ'))" || exit 0
 
-          # push using GITHUB_TOKEN
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
