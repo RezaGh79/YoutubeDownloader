@@ -1,74 +1,56 @@
 name: YouTube Downloader (Debug)
 
 on:
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
   download_and_upload:
-    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # Checkout the repository code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x' # Use the latest Python 3 version
+          python-version: "3.x"
 
       - name: Install yt-dlp
         run: |
-          echo "Updating package list..."
           sudo apt-get update -y
-          echo "Installing python3-pip..."
           sudo apt-get install -y python3-pip
-          echo "Upgrading pip and installing yt-dlp..."
-          pip install --upgrade pip
-          pip install --upgrade yt-dlp # Ensure we have the latest version with API fixes
-          echo "yt-dlp installation complete."
-          yt-dlp --version # Print version for confirmation
+          python -m pip install --upgrade pip
+          pip install --upgrade yt-dlp
+          yt-dlp --version
 
       - name: Create output directory
         run: |
-          echo "Creating output directory..."
           mkdir -p output
-          echo "Directory 'output' created."
+          ls -lah
 
-      - name: Download video
-        id: download_video # Give this step an ID for reference
+      - name: Download video (debug)
         run: |
-          VIDEO_URL="https://www.youtube.com/watch?v=dQw4w9WgXcQ" # Example URL, replace if needed
+          VIDEO_URL="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
           OUTPUT_PATH="output/%(title)s.%(ext)s"
 
-          echo "Starting video download from: $VIDEO_URL"
-          echo "Output path pattern: $OUTPUT_PATH"
+          echo "VIDEO_URL=$VIDEO_URL"
+          echo "OUTPUT_PATH=$OUTPUT_PATH"
 
-          # Execute yt-dlp
-          yt-dlp -f "worst" \
-            "$VIDEO_URL" \
+          yt-dlp -f worst \
+            --verbose \
+            --no-playlist \
             -o "$OUTPUT_PATH" \
-            --verbose # Add verbose flag for detailed logging
+            "$VIDEO_URL"
 
-          echo "yt-dlp command finished."
-          echo "Listing contents of 'output' directory:"
-          # Use find to be more robust in checking for files
-          if ! find output -type f \( -name "*.mp4" -o -name "*.webm" \) -print -quit | grep -q .; then
-            echo "ERROR: No video files (.mp4 or .webm) found in the output directory after download attempt!"
-            exit 1 # Exit with error code if no files are found
-          else
-            echo "Video files found in 'output' directory. Listing them:"
-            ls -lah output
-          fi
-        env:
-          # If you were using cookies, you would add:
-          # YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }} # Uncomment and add secret if needed
+          echo "=== output directory after download ==="
+          ls -lah output || true
+          echo "=== list matching files ==="
+          ls -lah output/*.mp4 output/*.webm 2>/dev/null || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: downloaded-youtube-video # Name of the artifact
-          path: output # Path to the directory containing the downloaded file(s)
-          # if-no-files-found: error # Removed to rely on the check in the previous step.
-
-      - name: Display artifact upload status
-        run: echo "Artifact 'downloaded-youtube-video' upload step completed."
+          name: downloaded-youtube-video
+          path: output
+          if-no-files-found: error
