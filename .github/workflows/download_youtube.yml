@@ -6,25 +6,54 @@ on:
 jobs:
   download:
     runs-on: ubuntu-latest
+
     steps:
       - name: Install yt-dlp (Latest Version)
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
-          # Install yt-dlp from PyPI to ensure we have the latest fixes for YouTube's API
           pip install --upgrade yt-dlp
 
       - name: Download video (lowest resolution)
         run: |
           mkdir -p output
-          # Using the latest yt-dlp installed above. 
-          # If you still get errors, you can add --user-agent flag as shown in the previous answer.
           yt-dlp -f "worst" \
-          "https://www.youtube.com/watch?v=dQw4w9WgXcQ" \
-          -o "output/%(title)s.%(ext)s"
+            "https://youtu.be/ELJCJeTyI1A?si=K8u9oLgheTMvpOD9" \
+            -o "output/%(title)s.%(ext)s"
 
       - name: Upload as artifact
         uses: actions/upload-artifact@v4
         with:
           name: youtube-video
           path: output
+
+      - name: Commit and push downloaded mp4 back to repo
+        run: |
+          set -e
+          ls -lah output || true
+
+          # configure git
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          # create branch-safe commit
+          git fetch --all
+          git checkout -B main
+
+          # copy mp4(s) into repo (optional: keep them under a folder)
+          mkdir -p saved-videos
+          cp -v output/*.mp4 saved-videos/ 2>/dev/null || true
+
+          # if nothing downloaded, stop
+          if [ -z "$(ls -1 saved-videos/*.mp4 2>/dev/null)" ]; then
+            echo "No mp4 found to commit. Exiting."
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "Add YouTube download ($(date -u +'%Y-%m-%dT%H-%M-%SZ'))" || exit 0
+
+          # push using GITHUB_TOKEN
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
