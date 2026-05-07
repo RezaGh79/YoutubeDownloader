@@ -3,6 +3,9 @@ name: YouTube Downloader (Debug)
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   download_and_upload:
     runs-on: ubuntu-latest
